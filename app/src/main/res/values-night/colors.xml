@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dark mode color overrides -->
+    <color name="primary">#d0bcff</color>
+    <color name="primary_variant">#b7a0dd</color>
+    <color name="secondary">#ccc2dc</color>
+    <color name="secondary_variant">#f0dddc</color>
+    <color name="tertiary">#f0dddc</color>
+
+    <!-- Dark surface colors -->
+    <color name="surface">#1c1b1f</color>
+    <color name="on_surface">#e6e1e5</color>
+    <color name="on_surface_variant">#cac4d0</color>
+    <color name="surface_variant">#49454e</color>
+
+    <!-- Dark background -->
+    <color name="background">#1c1b1f</color>
+    <color name="on_background">#e6e1e5</color>
+
+    <!-- Outline colors for dark mode -->
+    <color name="outline">#938f99</color>
+</resources>

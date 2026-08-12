@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <!-- Backup and restoration rules for Android 12+ -->
+    <domain-config>
+        <!-- Allow backup of database files -->
+        <domain name="database">
+            <path name="editor_database.db" />
+        </domain>
+        <!-- Block backup of cache files -->
+        <domain name="cache" />
+        <!-- Block backup of shared_prefs in certain cases -->
+        <domain name="sharedpref">
+            <exclude name="com.editor.core_preferences.xml" />
+        </domain>
+    </domain-config>
+</data-extraction-rules>

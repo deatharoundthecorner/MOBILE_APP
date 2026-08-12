@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Files to include in full backup -->
+    <include domain="database" path="editor_database.db" />
+    <include domain="file" path="documents" />
+
+    <!-- Files to exclude from backup -->
+    <exclude domain="cache" />
+    <exclude domain="temp" />
+    <exclude domain="sharedpref" path="com.editor.core_preferences.xml" />
+</full-backup-content>

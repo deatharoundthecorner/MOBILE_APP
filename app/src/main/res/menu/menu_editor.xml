@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_new"
+        android:title="@string/action_new"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_open"
+        android:title="@string/action_open"
+        app:showAsAction="never" />
+
+
+    <item
+        android:id="@+id/action_save_as"
+        android:title="@string/action_save_as"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_recents"
+        android:title="@string/action_recents"
+        app:showAsAction="never" />
+
+
+    <item
+        android:id="@+id/action_word_wrap"
+        android:title="@string/action_word_wrap"
+        android:checkable="true"
+        android:checked="true"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_save_version"
+        android:title="@string/action_save_version"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_version_history"
+        android:title="@string/action_version_history"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_read_only"
+        android:title="@string/action_read_only"
+        android:checkable="true"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_syntax_mode"
+        android:title="@string/action_syntax_mode"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_encoding"
+        android:title="@string/action_encoding"
+        app:showAsAction="never" />
+
+</menu>

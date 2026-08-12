@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.TextEditor" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_variant</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorSecondaryVariant">@color/secondary_variant</item>
+
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+
+        <!-- Material 3 Color Attributes -->
+        <item name="colorTertiary">@color/tertiary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/on_error</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:colorForeground">@color/on_background</item>
+        <item name="colorOutline">@color/outline</item>
+
+        <!-- Toolbar styling -->
+        <item name="android:textColorPrimary">@android:color/white</item>
+
+        <!-- Global Dialog styling to fix white-on-white text issues -->
+        <item name="alertDialogTheme">@style/ThemeOverlay.TextEditor.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.TextEditor.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <!-- Force text to Purple (primary color) -->
+        <item name="android:textColor">@color/primary</item>
+        <item name="android:textColorPrimary">@color/primary</item>
+        <item name="android:textColorHint">@color/secondary</item>
+        <item name="android:editTextColor">@color/primary</item>
+    </style>
+
+    <style name="ThemeOverlay.TextEditor.Toolbar" parent="ThemeOverlay.Material3.Dark">
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="actionMenuTextColor">@android:color/white</item>
+    </style>
+
+    <style name="ThemeOverlay.TextEditor.PopupMenu" parent="ThemeOverlay.Material3">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textColorPrimary">?attr/colorOnSurface</item>
+        <item name="colorSurface">?attr/colorSurface</item>
+        <item name="android:colorBackground">?attr/colorSurface</item>
+    </style>
+
+</resources>
