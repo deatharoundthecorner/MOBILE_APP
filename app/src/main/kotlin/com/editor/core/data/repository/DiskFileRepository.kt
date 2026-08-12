@@ -186,7 +186,19 @@ class DiskFileRepository(
             return@withContext
         }
 
-        // Create and persist version entity with delta/patch
+        // Ensure file metadata is persisted along with version history.
+        val fileEntity = FileEntity(
+            absolutePath = path,
+            fileName = if (path.startsWith("content://")) {
+                Uri.parse(path).lastPathSegment ?: "unnamed"
+            } else {
+                File(path).name
+            },
+            lastModified = System.currentTimeMillis(),
+            isReadOnly = false
+        )
+        fileDao.insertOrUpdateFile(fileEntity)
+
         val versionEntity = FileVersionEntity(
             filePath = path,
             timestamp = System.currentTimeMillis(),
@@ -259,6 +271,45 @@ class DiskFileRepository(
                 )
             }
         }
+    }
+
+    override suspend fun restoreVersion(path: String, versionId: Long, encoding: String): Unit = withContext(Dispatchers.IO) {
+        val content = getVersionContent(path, versionId)
+        if (content.isEmpty()) return@withContext
+
+        if (path.startsWith("content://")) {
+            val uri = Uri.parse(path)
+            val outputStream = context.contentResolver.openOutputStream(uri, "rwt")
+                ?: throw IOException("Failed to open output stream for restore: $path")
+            outputStream.use { stream ->
+                OutputStreamWriter(stream, Charset.forName(encoding)).use { writer ->
+                    writer.write(content)
+                }
+            }
+        } else {
+            val ioFile = File(path)
+            ioFile.parentFile?.mkdirs()
+            runCatching {
+                ioFile.writeText(content, Charset.forName(encoding))
+            }.getOrElse { ex ->
+                throw IOException("Failed to restore file at $path: ${ex.message}", ex)
+            }
+        }
+
+        // Update metadata
+        val fileEntity = FileEntity(
+            absolutePath = path,
+            fileName = File(path).name,
+            lastModified = System.currentTimeMillis(),
+            isReadOnly = false
+        )
+        fileDao.insertOrUpdateFile(fileEntity)
+    }
+
+    override suspend fun compareVersions(path: String, versionAId: Long, versionBId: Long): String = withContext(Dispatchers.IO) {
+        val a = getVersionContent(path, versionAId)
+        val b = getVersionContent(path, versionBId)
+        return@withContext DiffEngine.computeDiff(a, b)
     }
 
     private fun getFileNameFromUri(uri: Uri): String? {

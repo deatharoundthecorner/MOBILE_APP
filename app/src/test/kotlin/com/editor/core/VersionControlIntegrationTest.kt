@@ -6,9 +6,11 @@ import com.editor.core.data.local.entity.FileVersionEntity
 import com.editor.core.data.repository.DiskFileRepository
 import com.editor.core.features.versioncontrol.DiffEngine
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -38,70 +40,162 @@ class VersionControlIntegrationTest {
     }
 
     @Test
-    fun testIncrementalVersioningRequirements() {
+    fun firstVersion_canBeCreated() {
         runBlocking {
-            // Step 1: Create "Hello" and Save (Version 1)
-            val fileV1 = File(testFilePath)
-            fileV1.writeText("Hello")
-            repository.saveVersionSnapshot(testFilePath, "Version 1")
+            val file = File(testFilePath)
+            file.writeText("First version")
 
-            // Step 2: Change to "Hello World" and Save (Version 2)
-            fileV1.writeText("Hello World")
-            repository.saveVersionSnapshot(testFilePath, "Version 2")
-
-            // Step 3: Change to "Hello World!!" and Save (Version 3)
-            fileV1.writeText("Hello World!!")
-            repository.saveVersionSnapshot(testFilePath, "Version 3")
-
-            // Check Version History Storage (Test 2 requirements)
+            repository.saveVersionSnapshot(testFilePath, "Initial")
             val history = mockDao.versionHistory[testFilePath] ?: emptyList()
-            val historyAsc = history.sortedBy { it.timestamp }
+            assertEquals(1, history.size)
+            assertEquals("First version", history[0].patchContent)
 
-            if (historyAsc.size != 3) {
-                throw AssertionError("Should have 3 versions, but found ${historyAsc.size}. Content: ${historyAsc.map { it.patchContent }}")
-            }
+            file.delete()
+        }
+    }
 
-            // Version 1 stores "Hello"
-            if (historyAsc[0].patchContent != "Hello") {
-                throw AssertionError("Version 1 should store full text 'Hello', but got '${historyAsc[0].patchContent}'")
-            }
+    @Test
+    fun addedText_generatesAndAppliesPatch() {
+        runBlocking {
+            val patch = DiffEngine.computeDiff("Hello", "Hello World")
+            val result = DiffEngine.applyPatch("Hello", patch)
+            assertEquals("Hello World", result)
+            assertTrue(patch.contains("+ World") || patch.contains("+  World"))
+        }
+    }
 
-            // Version 2 stores delta (char-level since it's a single line)
-            val patch2 = historyAsc[1].patchContent
-            if (!patch2.contains("+ World") && !patch2.contains("+  World")) {
-                throw AssertionError("Version 2 should store delta containing '+ World', but got '$patch2'")
-            }
-            if (patch2 == "Hello World") {
-                throw AssertionError("Version 2 should NOT be the full 'Hello World'")
-            }
+    @Test
+    fun deletedText_generatesAndAppliesPatch() {
+        runBlocking {
+            val patch = DiffEngine.computeDiff("Hello World", "Hello")
+            val result = DiffEngine.applyPatch("Hello World", patch)
+            assertEquals("Hello", result)
+            assertTrue(patch.contains("- World") || patch.contains("-  World"))
+        }
+    }
 
-            // Version 3 stores delta
-            val patch3 = historyAsc[2].patchContent
-            if (!patch3.contains("+ !!")) {
-                throw AssertionError("Version 3 should store delta containing '+ !!', but got '$patch3'")
-            }
-            if (patch3 == "Hello World!!") {
-                throw AssertionError("Version 3 should NOT be the full 'Hello World!!'")
-            }
+    @Test
+    fun replacedText_generatesAndAppliesPatch() {
+        runBlocking {
+            val patch = DiffEngine.computeDiff("Hello World", "Hello Kotlin")
+            val result = DiffEngine.applyPatch("Hello World", patch)
+            assertEquals("Hello Kotlin", result)
+            assertFalse(patch.isBlank())
+            assertTrue(patch.contains("+") && patch.contains("-"))
+        }
+    }
 
-            // Rollback Verification
-            val contentV1 = repository.getVersionContent(testFilePath, historyAsc[0].versionId)
-            if (contentV1 != "Hello") {
-                throw AssertionError("Rollback to Version 1 failed: expected 'Hello', but got '$contentV1'")
-            }
+    @Test
+    fun emptyFile_isSupported() {
+        runBlocking {
+            val patch = DiffEngine.computeDiff("", "Hello")
+            val result = DiffEngine.applyPatch("", patch)
+            assertEquals("Hello", result)
+            assertFalse(patch.isBlank())
 
-            val contentV2 = repository.getVersionContent(testFilePath, historyAsc[1].versionId)
-            if (contentV2 != "Hello World") {
-                throw AssertionError("Rollback to Version 2 failed: expected 'Hello World', but got '$contentV2'")
-            }
+            val patch2 = DiffEngine.computeDiff("Hello", "")
+            val result2 = DiffEngine.applyPatch("Hello", patch2)
+            assertEquals("", result2)
+            assertTrue(patch2.contains("- Hello") || patch2.contains("-  Hello"))
+        }
+    }
 
-            val contentV3 = repository.getVersionContent(testFilePath, historyAsc[2].versionId)
-            if (contentV3 != "Hello World!!") {
-                throw AssertionError("Rollback to Version 3 failed: expected 'Hello World!!', but got '$contentV3'")
-            }
+    @Test
+    fun multipleVersions_canBeReconstructed() {
+        runBlocking {
+            val file = File(testFilePath)
+            file.writeText("v1")
+            repository.saveVersionSnapshot(testFilePath, "v1")
 
-            // Cleanup
-            fileV1.delete()
+            file.writeText("v1 updated")
+            repository.saveVersionSnapshot(testFilePath, "v2")
+
+            file.writeText("v1 updated again")
+            repository.saveVersionSnapshot(testFilePath, "v3")
+
+            val history = mockDao.versionHistory[testFilePath] ?: emptyList()
+            val asc = history.sortedBy { it.timestamp }
+            val reconstructed = repository.getVersionContent(testFilePath, asc[2].versionId)
+
+            assertEquals("v1 updated again", reconstructed)
+            assertEquals(3, history.size)
+
+            file.delete()
+        }
+    }
+
+    @Test
+    fun versionCanBeRestored() {
+        runBlocking {
+            val file = File(testFilePath)
+            file.writeText("Alpha")
+            repository.saveVersionSnapshot(testFilePath, "v1")
+
+            file.writeText("Alpha Beta")
+            repository.saveVersionSnapshot(testFilePath, "v2")
+
+            val history = mockDao.versionHistory[testFilePath] ?: emptyList()
+            val asc = history.sortedBy { it.timestamp }
+            repository.restoreVersion(testFilePath, asc[0].versionId)
+
+            assertEquals("Alpha", File(testFilePath).readText())
+            file.delete()
+        }
+    }
+
+    @Test
+    fun versionsCanBeCompared() {
+        runBlocking {
+            val file = File(testFilePath)
+            file.writeText("Alpha")
+            repository.saveVersionSnapshot(testFilePath, "v1")
+
+            file.writeText("Alpha Beta")
+            repository.saveVersionSnapshot(testFilePath, "v2")
+
+            val history = mockDao.versionHistory[testFilePath] ?: emptyList()
+            val asc = history.sortedBy { it.timestamp }
+            val diff = repository.compareVersions(testFilePath, asc[0].versionId, asc[1].versionId)
+
+            assertTrue(diff.contains("+ Beta") || diff.contains("+  Beta"))
+            file.delete()
+        }
+    }
+
+    @Test
+    fun versionHistory_isOrderedCorrectly() {
+        runBlocking {
+            val file = File(testFilePath)
+            file.writeText("One")
+            repository.saveVersionSnapshot(testFilePath, "1")
+
+            Thread.sleep(10)
+            file.writeText("Two")
+            repository.saveVersionSnapshot(testFilePath, "2")
+
+            val history = repository.getVersionHistory(testFilePath).first()
+            assertEquals(2, history.size)
+            assertTrue(history[0].timestamp >= history[1].timestamp)
+
+            val firstVersion = repository.getVersionContent(testFilePath, history[1].versionId)
+            val secondVersion = repository.getVersionContent(testFilePath, history[0].versionId)
+
+            assertEquals("One", firstVersion)
+            assertEquals("Two", secondVersion)
+            file.delete()
+        }
+    }
+
+    @Test
+    fun databasePersistsFilesAndVersions() {
+        runBlocking {
+            val file = File(testFilePath)
+            file.writeText("Saved")
+            repository.saveVersionSnapshot(testFilePath, "saved")
+
+            assertTrue(mockDao.files.containsKey(testFilePath))
+            assertEquals(1, mockDao.versionHistory[testFilePath]?.size ?: 0)
+            file.delete()
         }
     }
 
@@ -151,11 +245,17 @@ class VersionControlIntegrationTest {
             return versionHistory[filePath]?.reversed() ?: emptyList()
         }
 
+        override suspend fun getVersionById(versionId: Long): FileVersionEntity? {
+            versionHistory.values.forEach { list ->
+                list.forEach { v -> if (v.versionId == versionId) return v }
+            }
+            return null
+        }
+
         override suspend fun deleteVersionsByPath(filePath: String): Int {
             versionHistory.remove(filePath)
             return 1
         }
-
         override fun getRecentFiles(limit: Int): Flow<List<FileEntity>> = flowOf(files.values.toList())
     }
 

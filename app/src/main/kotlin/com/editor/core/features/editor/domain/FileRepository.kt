@@ -78,6 +78,17 @@ interface FileRepository {
      * @return Flow of text file metadata (content is empty)
      */
     fun getRecentFiles(limit: Int = 10): Flow<List<TextFile>>
+
+    /**
+     * Restores the specified version content to the file at `path`.
+     * This overwrites the file contents on disk (or via content URI) with the reconstructed version.
+     */
+    suspend fun restoreVersion(path: String, versionId: Long, encoding: String = "UTF-8")
+
+    /**
+     * Returns a diff patch representing changes from version A to version B.
+     */
+    suspend fun compareVersions(path: String, versionAId: Long, versionBId: Long): String
 }
 
 /**

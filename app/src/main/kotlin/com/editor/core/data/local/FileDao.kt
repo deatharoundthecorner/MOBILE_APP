@@ -92,6 +92,9 @@ interface FileDao {
     )
     suspend fun getVersionHistorySync(filePath: String): List<FileVersionEntity>
 
+    @Query("SELECT * FROM file_versions WHERE version_id = :versionId LIMIT 1")
+    suspend fun getVersionById(versionId: Long): FileVersionEntity?
+
     /**
      * Deletes all version records for a given file.
      * Used for cleanup when file is removed.
