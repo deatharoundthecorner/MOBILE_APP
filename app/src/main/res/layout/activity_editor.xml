@@ -232,7 +232,8 @@
     <!-- Scrollable EditText Container with Material 3 Styling -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:fillViewport="true">
 
         <EditText
@@ -254,5 +255,27 @@
             tools:ignore="LabelFor" />
 
     </ScrollView>
+
+    <!-- Bottom Status Bar -->
+    <LinearLayout
+        android:id="@+id/statusBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:background="?attr/colorSurfaceVariant">
+
+        <TextView
+            android:id="@+id/txtEditorStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="11sp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            tools:text="Ln 1, Col 1 | 0 chars | 1 lines" />
+
+    </LinearLayout>
 
 </LinearLayout>

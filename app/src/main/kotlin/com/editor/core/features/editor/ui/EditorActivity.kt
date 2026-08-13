@@ -94,6 +94,7 @@ class EditorActivity : AppCompatActivity() {
     private lateinit var searchQuery: EditText
     private lateinit var replaceText: EditText
     private lateinit var txtMatchCount: TextView
+    private lateinit var txtEditorStatus: TextView
     private lateinit var cbCaseSensitive: CheckBox
     private lateinit var cbWholeWord: CheckBox
     private lateinit var cbRegex: CheckBox
@@ -192,6 +193,7 @@ class EditorActivity : AppCompatActivity() {
                 if (searchPanel.visibility == android.view.View.VISIBLE && searchHelper.lastQuery.isNotEmpty()) {
                     performSearch(searchHelper.lastQuery)
                 }
+                updateEditorStatusBar()
             }
         }
 
@@ -204,6 +206,7 @@ class EditorActivity : AppCompatActivity() {
             undoRedoManager.clear()
             updateUndoRedoButtons()
             invalidateOptionsMenu()
+            updateEditorStatusBar()
         }
 
         fun syncCurrentText(text: String) {
@@ -212,6 +215,7 @@ class EditorActivity : AppCompatActivity() {
             lastSelectionEnd = editText.selectionEnd
             updateUndoRedoButtons()
             invalidateOptionsMenu()
+            updateEditorStatusBar()
         }
     }
 
@@ -251,6 +255,7 @@ class EditorActivity : AppCompatActivity() {
         searchQuery = findViewById(R.id.searchQuery)
         replaceText = findViewById(R.id.replaceText)
         txtMatchCount = findViewById(R.id.txtMatchCount)
+        txtEditorStatus = findViewById(R.id.txtEditorStatus)
         cbCaseSensitive = findViewById(R.id.cbCaseSensitive)
         cbWholeWord = findViewById(R.id.cbWholeWord)
         cbRegex = findViewById(R.id.cbRegex)
@@ -278,9 +283,11 @@ class EditorActivity : AppCompatActivity() {
 
         // Setup TextWatcher for Undo/Redo logic
         editText.addTextChangedListener(textWatcher)
+        editText.setOnClickListener { updateEditorStatusBar() }
 
         // Initialize button enabled/alpha states
         updateUndoRedoButtons()
+        updateEditorStatusBar()
 
         // Setup toolbar as action bar
         setSupportActionBar(toolbar)
@@ -1168,5 +1175,27 @@ class EditorActivity : AppCompatActivity() {
 
         editText.setHorizontallyScrolling(!isWordWrapEnabled)
         applySyntaxHighlight()
+        updateEditorStatusBar()
+    }
+
+    private fun updateEditorStatusBar() {
+        val text = editText.text.toString()
+        val sel = editText.selectionStart.coerceIn(0, text.length)
+
+        var line = 1
+        var col = 1
+        for (i in 0 until sel) {
+            if (text[i] == '\n') {
+                line++
+                col = 1
+            } else {
+                col++
+            }
+        }
+
+        val totalLines = if (text.isEmpty()) 1 else text.count { it == '\n' } + 1
+        val totalChars = text.length
+
+        txtEditorStatus.text = "Ln $line, Col $col | $totalChars chars | $totalLines lines"
     }
 }
