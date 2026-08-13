@@ -24,6 +24,8 @@ class SyntaxHighlighter {
     private val kotlinKeywordRegex = Regex(
         "\\b(fun|val|var|class|object|interface|sealed|enum|if|else|for|while|return|import|package|when|data|private|public|protected|internal|override|try|catch|finally|throw|is|as|true|false|null|this|super)\\b"
     )
+    private val kotlinAnnotationRegex = Regex("@[A-Za-z0-9_]+")
+    private val kotlinTypeRegex = Regex("\\b[A-Z][a-zA-Z0-9_]*\\b")
     private val kotlinStringRegex = Regex("\".*?\"|\"\"\"[\\s\\S]*?\"\"\"")
     private val kotlinCommentRegex = Regex("//.*|/\\*[\\s\\S]*?\\*/")
 
@@ -31,6 +33,8 @@ class SyntaxHighlighter {
     private val markdownBoldRegex = Regex("\\*\\*.*?\\*\\*")
     private val markdownCodeRegex = Regex("`[^`\\n]+`")
     private val markdownListRegex = Regex("(?m)^[ \\t]*([-*]|\\d+\\.)[ \\t]+.*")
+    private val markdownLinkRegex = Regex("\\[([^\\]]+)\\]\\(([^\\)]+)\\)")
+    private val markdownQuoteRegex = Regex("(?m)^[ \\t]*>.*")
 
     companion object {
         fun detectMode(fileNameOrPath: String?): SyntaxMode {
@@ -70,7 +74,7 @@ class SyntaxHighlighter {
             if (span is ForegroundColorSpan) {
                 // Do not remove search highlight spans
                 val color = span.foregroundColor
-                if (color != Color.parseColor("#80FFE082") && color != Color.parseColor("#FFB74D")) {
+                if (color != 0x80FFE082.toInt() && color != 0xFFFFB74D.toInt()) {
                     editable.removeSpan(span)
                 }
             } else if (span is StyleSpan || span is TypefaceSpan) {
@@ -96,7 +100,31 @@ class SyntaxHighlighter {
             )
         }
 
-        // 2. Strings (Green)
+        // 2. Types / Class names (Cyan)
+        kotlinTypeRegex.findAll(textStr).forEach { match ->
+            val start = match.range.first
+            val end = match.range.last + 1
+            editable.setSpan(
+                ForegroundColorSpan(Color.parseColor("#00BCD4")),
+                start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        // 3. Annotations (Amber Bold)
+        kotlinAnnotationRegex.findAll(textStr).forEach { match ->
+            val start = match.range.first
+            val end = match.range.last + 1
+            editable.setSpan(
+                ForegroundColorSpan(Color.parseColor("#FFB74D")),
+                start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            editable.setSpan(
+                StyleSpan(Typeface.BOLD),
+                start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        // 4. Strings (Green)
         kotlinStringRegex.findAll(textStr).forEach { match ->
             val start = match.range.first
             val end = match.range.last + 1
@@ -106,7 +134,7 @@ class SyntaxHighlighter {
             )
         }
 
-        // 3. Comments (Gray Italic)
+        // 5. Comments (Gray Italic)
         kotlinCommentRegex.findAll(textStr).forEach { match ->
             val start = match.range.first
             val end = match.range.last + 1
@@ -168,6 +196,30 @@ class SyntaxHighlighter {
             val end = match.range.last + 1
             editable.setSpan(
                 ForegroundColorSpan(Color.parseColor("#FF9800")),
+                start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        // 5. Links (Cyan)
+        markdownLinkRegex.findAll(textStr).forEach { match ->
+            val start = match.range.first
+            val end = match.range.last + 1
+            editable.setSpan(
+                ForegroundColorSpan(Color.parseColor("#00BCD4")),
+                start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+
+        // 6. Blockquotes (Gray Italic)
+        markdownQuoteRegex.findAll(textStr).forEach { match ->
+            val start = match.range.first
+            val end = match.range.last + 1
+            editable.setSpan(
+                ForegroundColorSpan(Color.parseColor("#9E9E9E")),
+                start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            editable.setSpan(
+                StyleSpan(Typeface.ITALIC),
                 start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             )
         }
