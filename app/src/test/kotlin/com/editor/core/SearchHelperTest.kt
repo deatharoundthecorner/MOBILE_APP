@@ -122,4 +122,15 @@ class SearchHelperTest {
         assertEquals(3, count)
         assertEquals("client_1 client_2 client_3", resultText)
     }
+
+    @Test
+    fun testMatchLineNumberCalculation() {
+        val multilineText = "Line 1\nLine 2\nLine 3 target\nLine 4"
+        helper.search(multilineText, "target")
+
+        val match = helper.getCurrentMatch()
+        assertNotNull(match)
+        val lineNumber = helper.getMatchLineNumber(multilineText, match!!)
+        assertEquals(3, lineNumber)
+    }
 }

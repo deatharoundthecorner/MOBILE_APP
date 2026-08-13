@@ -207,4 +207,17 @@ class SearchHelper {
             else -> "$activeMatchNumber of ${matches.size}"
         }
     }
+
+    /**
+     * Returns 1-based line number for [match] position in [text].
+     */
+    fun getMatchLineNumber(text: String, match: MatchRange): Int {
+        if (text.isEmpty() || match.start <= 0) return 1
+        val limit = match.start.coerceIn(0, text.length)
+        var lines = 1
+        for (i in 0 until limit) {
+            if (text[i] == '\n') lines++
+        }
+        return lines
+    }
 }
